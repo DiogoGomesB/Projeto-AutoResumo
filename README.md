@@ -1,5 +1,5 @@
 Projeto: AutoResumo
-Integrantes: Diogo Gomes Barbosa, Gabriel Januario Alves, Davi Gama, Joao Paulo, Samuel Allan, Jean, Joao
+Integrantes: Diogo Gomes, Gabriel Januario, Davi Gama, Joao Pedro, Samuel Allan, Jean, Joao Guilherme
 API Utilizada:
 API de IA utilizada: Hugging Face Inference API
 Explicação de como rodar/testar o projeto: 

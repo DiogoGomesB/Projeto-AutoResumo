@@ -3,3 +3,6 @@ Integrantes: Diogo Gomes, Gabriel Januario, Davi Gama, Joao Pedro, Samuel Allan,
 API Utilizada:
 API de IA utilizada: Hugging Face Inference API
 Explicação de como rodar/testar o projeto: 
+
+
+DIOGOOOOO TESTEEEEeee

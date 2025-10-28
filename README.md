@@ -5,4 +5,4 @@ API de IA utilizada: Hugging Face Inference API
 Explicação de como rodar/testar o projeto: 
 
 
-DIOGOOOOO TESTEEEE
+DIOGOOOOO TESTEEEEeee

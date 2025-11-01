@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resumos IA - Gerador Inteligente</title>
+    <style>
+        :root {
+            --primary-color: #4285f4;
+            --secondary-color: #34a853;
+            --background-color: #f8f9fa;
+            --card-color: #ffffff;
+            --text-color: #202124;
+            --border-color: #dadce0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .card {
+            background-color: var(--card-color);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            resize: vertical;
+            min-height: 150px;
+            font-size: 16px;
+        }
+        
+        .char-count {
+            text-align: right;
+            font-size: 14px;
+            color: #5f6368;
+            margin-top: 5px;
+        }
+        
+        .char-count.warning {
+            color: #ea4335;
+        }
+        
+        .options-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .option-btn {
+            padding: 8px 16px;
+            background-color: #f1f3f4;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .option-btn:hover {
+            background-color: #e8f0fe;
+            border-color: var(--primary-color);
+        }
+        
+        .option-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .action-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+        
+        .action-btn:hover {
+            background-color: #3367d6;
+        }
+        
+        .action-btn:disabled {
+            background-color: #9aa0a6;
+            cursor: not-allowed;
+        }
+        
+        .result-container {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .result-title {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+        
+        .result-content {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid var(--primary-color);
+            white-space: pre-line;
+            line-height: 1.6;
+        }
+        
+        .config-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            color: var(--primary-color);
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #5f6368;
+        }
+        
+        .api-key-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        
+        .api-status {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-valid {
+            background-color: var(--secondary-color);
+        }
+        
+        .status-invalid {
+            background-color: #ea4335;
+        }
+        
+        .status-unknown {
+            background-color: #fbbc05;
+        }
+        
+        .api-details {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .api-details p {
+            margin-bottom: 5px;
+        }
+        
+        .save-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        
+        .tutorial-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            color: #ea4335;
+            background-color: #fce8e6;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .success-message {
+            color: var(--secondary-color);
+            background-color: #e6f4ea;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .tutorial-content {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .tutorial-step {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .tutorial-step:last-child {
+            border-bottom: none;
+        }
+        
+        .step-number {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            margin-right: 10px;
+        }
+        
+        .step-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .step-description {
+            margin-left: 34px;
+            font-size: 14px;
+            color: #5f6368;
+        }
+        
+        .btn-group {
+            display: flex;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        
+        .word-count {
+            font-size: 12px;
+            color: #5f6368;
+            text-align: right;
+            margin-top: 5px;
+        }
+        
+        .api-test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .api-test-success {
+            background-color: #e6f4ea;
+            color: var(--secondary-color);
+            border: 1px solid var(--secondary-color);
+        }
+        
+        .api-test-error {
+            background-color: #fce8e6;
+            color: #ea4335;
+            border: 1px solid #ea4335;
+        }
+        
+        .models-list {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 10px;
+            font-size: 12px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .model-item {
+            padding: 5px;
+            border-bottom: 1px solid #e8eaed;
+        }
+        
+        .model-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Resumos IA</h1>
+            <p>Gerador inteligente de resumos usando Google Gemini</p>
+        </header>
+        
+        <main>
+            <div class="card">
+                <h2>Gerador de Resumos</h2>
+                
+                <div class="form-group">
+                    <label for="text-to-summarize">Texto para Resumir:</label>
+                    <textarea id="text-to-summarize" placeholder="Cole aqui o texto que você deseja resumir. Exemplo: 'A inteligência artificial está transformando a educação através de ferramentas personalizadas...'"></textarea>
+                    <div id="char-count" class="char-count">Caracteres: 0/1000</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Tamanho do Resumo:</label>
+                    <div class="options-group">
+                        <button class="option-btn active" data-words="50">50 palavras</button>
+                        <button class="option-btn" data-words="100">100 palavras</button>
+                        <button class="option-btn" data-words="200">200 palavras</button>
+                        <button class="option-btn" data-words="last">Último</button>
+                    </div>
+                </div>
+                
+                <button id="generate-btn" class="action-btn">Gerar Resumo com IA</button>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Gerando resumo com Google Gemini...</p>
+                </div>
+                
+                <div class="error-message" id="error-message"></div>
+                
+                <div class="result-container" id="result-container">
+                    <h3 class="result-title">Resumo Gerado:</h3>
+                    <div class="result-content" id="result-content"></div>
+                    <div class="word-count" id="word-count"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <button class="config-btn" id="config-btn">⚙️</button>
+    
+    <div class="modal" id="config-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Configurações</h2>
+                <button class="close-btn" id="close-modal">&times;</button>
+            </div>
+            
+            <div class="form-group">
+                <label for="api-key">Chave da API Google Gemini:</label>
+                <input type="password" id="api-key" class="api-key-input" placeholder="Cole sua chave da API aqui">
+                
+                <div class="api-status">
+                    <div id="status-indicator" class="status-indicator status-unknown"></div>
+                    <span id="status-text">Status da API: Não configurada</span>
+                </div>
+                
+                <div class="api-details" id="api-details">
+                    <p><strong>API selecionada:</strong> <span id="api-name">Nenhuma</span></p>
+                    <p><strong>Modelo:</strong> <span id="api-model">-</span></p>
+                    <p><strong>Limite de requisições:</strong> <span id="api-limit">-</span></p>
+                    <p><strong>Última verificação:</strong> <span id="api-last-check">-</span></p>
+                </div>
+                
+                <div id="api-test-result" class="api-test-result"></div>
+                
+                <div id="models-list" class="models-list" style="display: none;">
+                    <h4>Modelos Disponíveis:</h4>
+                    <div id="models-container"></div>
+                </div>
+                
+                <p style="font-size: 14px; color: #5f6368;">
+                    Para obter uma chave da API, acesse: 
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>
+                </p>
+            </div>
+            
+            <div class="btn-group">
+                <button id="list-models-btn" class="tutorial-btn">Listar Modelos</button>
+                <button id="test-api-btn" class="tutorial-btn">Testar API</button>
+                <button id="save-api-btn" class="save-btn">Salvar Chave</button>
+            </div>
+            
+            <div class="success-message" id="success-message"></div>
+            
+            <div class="tutorial-content" id="tutorial-content">
+                <h3 style="margin-bottom: 15px;">Tutorial: Como configurar a API Google Gemini</h3>
+                
+                <div class="tutorial-step">
+                    <div class="step-title">
+                        <span class="step-number">1</span>
+                        Acesse o Google AI Studio
+                    </div>
+                    <div class="step-description">
+                        Vá para <a href="https://aistudio.google.com/app/apikey" target="_blank">https://aistudio.google.com/app/apikey</a> e faça login com sua conta Google.
+                    </div>
+                </div>
+                
+                <div class="tutorial-step">
+                    <div class="step-title">
+                        <span class="step-number">2</span>
+                        Crie uma nova chave de API
+                    </div>
+                    <div class="step-description">
+                        Clique no botão "Criar chave de API" e selecione o projeto que deseja usar ou crie um novo.
+                    </div>
+                </div>
+                
+                <div class="tutorial-step">
+                    <div class="step-title">
+                        <span class="step-number">3</span>
+                        Copie a chave gerada
+                    </div>
+                    <div class="step-description">
+                        Após a criação, copie a chave de API exibida. <strong>Importante:</strong> Esta chave não será mostrada novamente, então salve-a em um local seguro.
+                    </div>
+                </div>
+                
+                <div class="tutorial-step">
+                    <div class="step-title">
+                        <span class="step-number">4</span>
+                        Cole a chave no campo acima
+                    </div>
+                    <div class="step-description">
+                        Volte para esta página e cole a chave no campo "Chave da API Google Gemini".
+                    </div>
+                </div>
+                
+                <div class="tutorial-step">
+                    <div class="step-title">
+                        <span class="step-number">5</span>
+                        Teste a conexão
+                    </div>
+                    <div class="step-description">
+                        Clique em "Testar API" para verificar se a chave está funcionando corretamente.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Elementos da interface
+        const textToSummarize = document.getElementById('text-to-summarize');
+        const charCount = document.getElementById('char-count');
+        const optionButtons = document.querySelectorAll('.option-btn');
+        const generateBtn = document.getElementById('generate-btn');
+        const loadingElement = document.getElementById('loading');
+        const resultContainer = document.getElementById('result-container');
+        const resultContent = document.getElementById('result-content');
+        const wordCountElement = document.getElementById('word-count');
+        const errorMessage = document.getElementById('error-message');
+        const configBtn = document.getElementById('config-btn');
+        const configModal = document.getElementById('config-modal');
+        const closeModal = document.getElementById('close-modal');
+        const apiKeyInput = document.getElementById('api-key');
+        const saveApiBtn = document.getElementById('save-api-btn');
+        const testApiBtn = document.getElementById('test-api-btn');
+        const listModelsBtn = document.getElementById('list-models-btn');
+        const tutorialContent = document.getElementById('tutorial-content');
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const successMessage = document.getElementById('success-message');
+        const apiTestResult = document.getElementById('api-test-result');
+        const modelsList = document.getElementById('models-list');
+        const modelsContainer = document.getElementById('models-container');
+        const apiName = document.getElementById('api-name');
+        const apiModel = document.getElementById('api-model');
+        const apiLimit = document.getElementById('api-limit');
+        const apiLastCheck = document.getElementById('api-last-check');
+        
+        // Variáveis de estado
+        let selectedWordCount = 50;
+        let apiKey = '';
+        let selectedModel = 'gemini-1.5-flash';
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            // Carregar configurações salvas
+            loadSavedSettings();
+            
+            // Atualizar contador de caracteres
+            updateCharCount();
+            
+            // Configurar eventos
+            setupEventListeners();
+        });
+        
+        function loadSavedSettings() {
+            // Tentar carregar a chave da API do localStorage
+            const savedApiKey = localStorage.getItem('geminiApiKey');
+            const savedModel = localStorage.getItem('geminiModel');
+            
+            if (savedApiKey) {
+                apiKey = savedApiKey;
+                apiKeyInput.value = savedApiKey;
+            }
+            
+            if (savedModel) {
+                selectedModel = savedModel;
+            }
+            
+            updateApiDetails();
+        }
+        
+        function setupEventListeners() {
+            // Contador de caracteres
+            textToSummarize.addEventListener('input', updateCharCount);
+            
+            // Botões de opção de tamanho
+            optionButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    optionButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedWordCount = this.getAttribute('data-words');
+                });
+            });
+            
+            // Botão de gerar resumo
+            generateBtn.addEventListener('click', generateSummary);
+            
+            // Botão de configurações
+            configBtn.addEventListener('click', function() {
+                configModal.style.display = 'flex';
+                // Esconder tutorial ao abrir configurações
+                tutorialContent.style.display = 'none';
+            });
+            
+            // Fechar modal
+            closeModal.addEventListener('click', function() {
+                configModal.style.display = 'none';
+            });
+            
+            // Fechar modal ao clicar fora
+            window.addEventListener('click', function(event) {
+                if (event.target === configModal) {
+                    configModal.style.display = 'none';
+                }
+            });
+            
+            // Salvar chave da API
+            saveApiBtn.addEventListener('click', saveApiKey);
+            
+            // Testar API
+            testApiBtn.addEventListener('click', testApiConnection);
+            
+            // Listar modelos
+            listModelsBtn.addEventListener('click', listAvailableModels);
+        }
+        
+        function updateCharCount() {
+            const count = textToSummarize.value.length;
+            charCount.textContent = `Caracteres: ${count}/1000`;
+            
+            if (count > 1000) {
+                charCount.classList.add('warning');
+                generateBtn.disabled = true;
+            } else {
+                charCount.classList.remove('warning');
+                generateBtn.disabled = false;
+            }
+        }
+        
+        function updateApiStatus(status, message) {
+            statusIndicator.className = 'status-indicator';
+            
+            switch(status) {
+                case 'valid':
+                    statusIndicator.classList.add('status-valid');
+                    statusText.textContent = `Status da API: ${message}`;
+                    break;
+                case 'invalid':
+                    statusIndicator.classList.add('status-invalid');
+                    statusText.textContent = `Status da API: ${message}`;
+                    break;
+                case 'unknown':
+                default:
+                    statusIndicator.classList.add('status-unknown');
+                    statusText.textContent = `Status da API: ${message}`;
+                    break;
+            }
+        }
+        
+        function updateApiDetails() {
+            if (apiKey) {
+                apiName.textContent = 'Google Gemini API';
+                apiModel.textContent = selectedModel;
+                apiLimit.textContent = '15 requisições/minuto (padrão)';
+                
+                const now = new Date();
+                apiLastCheck.textContent = now.toLocaleString('pt-BR');
+                updateApiStatus('valid', 'API configurada com sucesso');
+            } else {
+                apiName.textContent = 'Nenhuma';
+                apiModel.textContent = '-';
+                apiLimit.textContent = '-';
+                apiLastCheck.textContent = '-';
+                updateApiStatus('unknown', 'Não configurada');
+            }
+        }
+        
+        async function listAvailableModels() {
+            const key = apiKeyInput.value.trim();
+            
+            if (!key) {
+                showApiTestResult('Por favor, insira uma chave da API primeiro', false);
+                return;
+            }
+            
+            showApiTestResult('Buscando modelos disponíveis...', true);
+            
+            try {
+                // Listar modelos disponíveis
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${key}`);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || `Erro HTTP: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.models && data.models.length > 0) {
+                    modelsContainer.innerHTML = '';
+                    data.models.forEach(model => {
+                        const modelItem = document.createElement('div');
+                        modelItem.className = 'model-item';
+                        modelItem.innerHTML = `
+                            <strong>${model.name}</strong><br>
+                            <small>Suporta generateContent: ${model.supportedGenerationMethods?.includes('generateContent') ? '✅' : '❌'}</small>
+                        `;
+                        modelItem.style.cursor = 'pointer';
+                        modelItem.addEventListener('click', () => {
+                            selectModel(model.name.replace('models/', ''));
+                        });
+                        modelsContainer.appendChild(modelItem);
+                    });
+                    
+                    modelsList.style.display = 'block';
+                    showApiTestResult(`✅ ${data.models.length} modelos encontrados. Clique em um modelo para selecionar.`, true);
+                } else {
+                    throw new Error('Nenhum modelo encontrado');
+                }
+                
+            } catch (error) {
+                console.error('Erro ao listar modelos:', error);
+                showApiTestResult(`❌ Erro ao listar modelos: ${error.message}`, false);
+            }
+        }
+        
+        function selectModel(modelName) {
+            selectedModel = modelName;
+            localStorage.setItem('geminiModel', modelName);
+            updateApiDetails();
+            showApiTestResult(`✅ Modelo selecionado: ${modelName}`, true);
+        }
+        
+        async function testApiConnection() {
+            const key = apiKeyInput.value.trim();
+            
+            if (!key) {
+                showApiTestResult('Por favor, insira uma chave da API primeiro', false);
+                return;
+            }
+            
+            if (!selectedModel) {
+                showApiTestResult('Por favor, selecione um modelo primeiro', false);
+                return;
+            }
+            
+            showApiTestResult('Testando conexão com a API...', true);
+            
+            try {
+                // Usando a versão correta v1 e o modelo selecionado
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${selectedModel}:generateContent?key=${key}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: "Responda apenas com 'OK' se esta conexão estiver funcionando."
+                            }]
+                        }]
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || `Erro HTTP: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    showApiTestResult('✅ Conexão com a API estabelecida com sucesso!', true);
+                    updateApiStatus('valid', 'API conectada e funcionando');
+                } else {
+                    throw new Error('Resposta inesperada da API');
+                }
+                
+            } catch (error) {
+                console.error('Erro ao testar API:', error);
+                showApiTestResult(`❌ Falha na conexão: ${error.message}`, false);
+                updateApiStatus('invalid', 'Falha na conexão');
+            }
+        }
+        
+        function showApiTestResult(message, isSuccess) {
+            apiTestResult.textContent = message;
+            apiTestResult.className = 'api-test-result ' + (isSuccess ? 'api-test-success' : 'api-test-error');
+            apiTestResult.style.display = 'block';
+        }
+        
+        function saveApiKey() {
+            const key = apiKeyInput.value.trim();
+            
+            if (!key) {
+                updateApiStatus('invalid', 'Por favor, insira uma chave da API');
+                return;
+            }
+            
+            // Salvar a chave
+            apiKey = key;
+            localStorage.setItem('geminiApiKey', key);
+            
+            updateApiStatus('valid', 'API configurada com sucesso');
+            updateApiDetails();
+            
+            // Mostrar mensagem de sucesso
+            successMessage.textContent = 'Chave da API salva com sucesso!';
+            successMessage.style.display = 'block';
+            
+            // Esconder mensagem após 3 segundos
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 3000);
+        }
+        
+        async function generateSummary() {
+            // Validar entrada
+            const text = textToSummarize.value.trim();
+            
+            if (!text) {
+                showError('Por favor, insira um texto para resumir');
+                return;
+            }
+            
+            if (text.length > 1000) {
+                showError('O texto excede o limite de 1000 caracteres');
+                return;
+            }
+            
+            if (!apiKey) {
+                showError('Por favor, configure sua chave da API primeiro');
+                configModal.style.display = 'flex';
+                return;
+            }
+            
+            if (!selectedModel) {
+                showError('Por favor, selecione um modelo primeiro');
+                configModal.style.display = 'flex';
+                return;
+            }
+            
+            // Esconder mensagens de erro e resultados anteriores
+            hideError();
+            resultContainer.style.display = 'none';
+            
+            // Mostrar loading
+            loadingElement.style.display = 'block';
+            generateBtn.disabled = true;
+            
+            try {
+                // Chamada REAL para a API do Google Gemini
+                const summary = await callGeminiAPI(text, selectedWordCount);
+                
+                // Esconder loading
+                loadingElement.style.display = 'none';
+                generateBtn.disabled = false;
+                
+                // Mostrar resultado
+                resultContent.textContent = summary;
+                const wordCount = summary.split(/\s+/).length;
+                wordCountElement.textContent = `Resumo com ${wordCount} palavras`;
+                resultContainer.style.display = 'block';
+                
+            } catch (error) {
+                // Esconder loading em caso de erro
+                loadingElement.style.display = 'none';
+                generateBtn.disabled = false;
+                
+                showError(`Erro ao gerar resumo: ${error.message}`);
+            }
+        }
+        
+        async function callGeminiAPI(text, wordCount) {
+            const targetWords = wordCount === 'last' ? 50 : parseInt(wordCount);
+            
+            const prompt = `Resuma o seguinte texto em aproximadamente ${targetWords} palavras, mantendo as ideias principais e o significado original. Retorne apenas o resumo, sem comentários adicionais:\n\n${text}`;
+            
+            // Usando a versão correta v1 e o modelo selecionado
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${selectedModel}:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: prompt
+                        }]
+                    }],
+                    generationConfig: {
+                        temperature: 0.3,
+                        topK: 40,
+                        topP: 0.95,
+                        maxOutputTokens: targetWords * 10,
+                    }
+                })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || `Erro HTTP: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.candidates && data.candidates[0].content.parts[0].text) {
+                return data.candidates[0].content.parts[0].text.trim();
+            } else {
+                throw new Error('Resposta inesperada da API');
+            }
+        }
+        
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+        
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+    </script>
+</body>
+</html>

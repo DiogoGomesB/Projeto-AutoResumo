@@ -163,7 +163,18 @@ async function gerarResumo(texto, tentativas = 0) {
             throw new Error(`Erro da API: ${data.error}`);
         }
 
-        const resumo = data[0]?.summary_text || 'Resumo não gerado. Tente um texto diferente.';
+        let resumo = '';
+
+        if (Array.isArray(data) && data.length > 0 && data[0].summary_text) {
+            resumo = data[0].summary_text;
+        }
+        else if (data.error) {
+            throw new Error(data.error);
+        }
+        else {
+            resumo = 'Resumo não gerado. Tente novamente com outro texto.';
+        }
+
         resumoTexto.innerHTML = `<p class="mb-0">${resumo}</p><small class="text-muted">Modelo usado: ${API_URL === API_URL_PT ? 'Português' : 'Inglês'}</small>`;
         copiarBtn.classList.remove('d-none');
         salvarResumo(texto, resumo);

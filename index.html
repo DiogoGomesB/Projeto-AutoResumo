@@ -8,6 +8,8 @@
     <!-- Bibliotecas para extração de texto de arquivos -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <!-- Bibliotecas para exportação de resumos -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root {
             --primary-color: #4285f4;
@@ -591,6 +593,82 @@
             background-color: #5a2d2d;
             color: #ea4335;
         }
+
+        /* Export Buttons Styles - Nova funcionalidade */
+        .export-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .export-subtitle {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-color);
+            width: 100%;
+        }
+
+        .export-buttons-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .export-buttons .export-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .export-btn:hover {
+            background-color: #3367d6;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .export-btn:active {
+            transform: translateY(0);
+        }
+
+        .save-btn-export {
+            background-color: var(--secondary-color);
+        }
+
+        .save-btn-export:hover {
+            background-color: #2d8f4f;
+        }
+
+        body.dark-mode .export-btn {
+            background-color: #5f6368;
+        }
+
+        body.dark-mode .export-btn:hover {
+            background-color: #70757a;
+        }
+
+        body.dark-mode .save-btn-export {
+            background-color: #81c995;
+            color: #1e3a2a;
+        }
+
+        body.dark-mode .save-btn-export:hover {
+            background-color: #6db888;
+        }
     </style>
 
 
@@ -652,6 +730,13 @@
                     <h3 class="result-title">Resumo Gerado:</h3>
                     <div class="result-content" id="result-content"></div>
                     <div class="word-count" id="word-count"></div>
+                    <div class="export-buttons" id="export-buttons" style="display: none;">
+                        <h4 class="export-subtitle">Salvar resumo gerado:</h4>
+                        <div class="export-buttons-row">
+                            <button id="export-pdf-btn" class="export-btn" title="Exportar como PDF">📄 PDF</button>
+                            <button id="export-txt-btn" class="export-btn" title="Exportar como TXT">📝 TXT</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -880,6 +965,21 @@
             }
             if (clearFileBtn) {
                 clearFileBtn.addEventListener('click', clearFile);
+            }
+
+            // Botões de exportação - NOVA FUNCIONALIDADE
+            const exportPdfBtn = document.getElementById('export-pdf-btn');
+            const exportTxtBtn = document.getElementById('export-txt-btn');
+            const saveSummaryBtn = document.getElementById('save-summary-btn');
+            
+            if (exportPdfBtn) {
+                exportPdfBtn.addEventListener('click', exportToPDF);
+            }
+            if (exportTxtBtn) {
+                exportTxtBtn.addEventListener('click', exportToTXT);
+            }
+            if (saveSummaryBtn) {
+                saveSummaryBtn.addEventListener('click', saveSummaryLocally);
             }
         }
 
@@ -1129,6 +1229,12 @@
                 const wordCount = summary.split(/\s+/).length;
                 wordCountElement.textContent = `Resumo com ${wordCount} palavras`;
                 resultContainer.style.display = 'block';
+                
+                // Mostrar botões de exportação - NOVA FUNCIONALIDADE
+                const exportButtons = document.getElementById('export-buttons');
+                if (exportButtons) {
+                    exportButtons.style.display = 'flex';
+                }
 
             } catch (error) {
                 // Esconder loading em caso de erro
@@ -1423,6 +1529,126 @@
             }
         }
         // ===== FIM DA NOVA FUNCIONALIDADE =====
+
+        // ===== NOVA FUNCIONALIDADE: Exportar Resumo =====
+        // Função para exportar resumo como PDF
+        function exportToPDF() {
+            const summaryText = resultContent.textContent;
+            if (!summaryText || !summaryText.trim()) {
+                showError('Não há resumo para exportar');
+                return;
+            }
+
+            try {
+                if (typeof window.jspdf !== 'undefined') {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    
+                    // Configurar fonte
+                    doc.setFontSize(16);
+                    doc.text('Resumo Gerado', 20, 20);
+                    
+                    // Adicionar data
+                    const date = new Date().toLocaleString('pt-BR');
+                    doc.setFontSize(10);
+                    doc.text(`Data: ${date}`, 20, 30);
+                    
+                    // Adicionar texto do resumo
+                    doc.setFontSize(12);
+                    const lines = doc.splitTextToSize(summaryText, 170);
+                    doc.text(lines, 20, 40);
+                    
+                    // Salvar arquivo
+                    const fileName = `resumo_${Date.now()}.pdf`;
+                    doc.save(fileName);
+                } else {
+                    throw new Error('Biblioteca jsPDF não carregada');
+                }
+            } catch (error) {
+                console.error('Erro ao exportar PDF:', error);
+                showError(`Erro ao exportar PDF: ${error.message}`);
+            }
+        }
+
+        // Função para exportar resumo como TXT
+        function exportToTXT() {
+            const summaryText = resultContent.textContent;
+            if (!summaryText || !summaryText.trim()) {
+                showError('Não há resumo para exportar');
+                return;
+            }
+
+            try {
+                const date = new Date().toLocaleString('pt-BR');
+                const content = `RESUMO GERADO\nData: ${date}\n\n${summaryText}`;
+                
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `resumo_${Date.now()}.txt`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Erro ao exportar TXT:', error);
+                showError(`Erro ao exportar TXT: ${error.message}`);
+            }
+        }
+
+        // Função para salvar resumo localmente (localStorage)
+        function saveSummaryLocally() {
+            const summaryText = resultContent.textContent;
+            if (!summaryText || !summaryText.trim()) {
+                showError('Não há resumo para salvar');
+                return;
+            }
+
+            try {
+                // Obter resumos salvos ou criar novo array
+                const savedSummaries = JSON.parse(localStorage.getItem('savedSummaries') || '[]');
+                
+                // Criar objeto do resumo
+                const summaryData = {
+                    id: Date.now(),
+                    text: summaryText,
+                    date: new Date().toLocaleString('pt-BR'),
+                    wordCount: summaryText.split(/\s+/).length
+                };
+                
+                // Adicionar ao início do array
+                savedSummaries.unshift(summaryData);
+                
+                // Limitar a 50 resumos salvos
+                if (savedSummaries.length > 50) {
+                    savedSummaries.pop();
+                }
+                
+                // Salvar no localStorage
+                localStorage.setItem('savedSummaries', JSON.stringify(savedSummaries));
+                
+                // Mostrar mensagem de sucesso
+                const successMsg = document.createElement('div');
+                successMsg.className = 'success-message';
+                successMsg.textContent = '✅ Resumo salvo com sucesso!';
+                successMsg.style.display = 'block';
+                successMsg.style.marginTop = '10px';
+                resultContainer.appendChild(successMsg);
+                
+                // Esconder mensagem após 3 segundos
+                setTimeout(() => {
+                    successMsg.style.display = 'none';
+                    if (resultContainer.contains(successMsg)) {
+                        resultContainer.removeChild(successMsg);
+                    }
+                }, 3000);
+            } catch (error) {
+                console.error('Erro ao salvar resumo:', error);
+                showError(`Erro ao salvar resumo: ${error.message}`);
+            }
+        }
+        // ===== FIM DA FUNCIONALIDADE DE EXPORTAÇÃO =====
 
     </script>
 </body>

@@ -2,7 +2,7 @@
 const API_URL_PT = 'https://api-inference.huggingface.co/models/facebook/bart-large-cnn';
 const API_URL_EN = 'https://api-inference.huggingface.co/models/facebook/bart-large-cnn'; // Inglês fallback
 let API_URL = API_URL_PT;
-const API_TOKEN = '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'; // COLE A NOVA CHAVE AQUI (ex: 'hf_abc123...')
+const API_TOKEN = 'AIzaSyAXSagQtq69w7Xao64M9Vy6plGl5i3O4Z0'; // COLE A NOVA CHAVE AQUI (ex: 'hf_abc123...')
 
 // Verificação inicial do token
 if (!API_TOKEN || API_TOKEN.trim() === '') {
@@ -209,3 +209,171 @@ copiarBtn.addEventListener('click', async () => {
     }
 });
 window.carregarResumo = carregarResumo;
+
+// ===== NOVA FUNCIONALIDADE: Upload e Extração de Texto de Arquivos =====
+// Este código adiciona funcionalidade de upload de arquivos sem alterar o código existente
+
+// Elementos do DOM para upload de arquivos
+const fileUpload = document.getElementById('file-upload');
+const fileInfo = document.getElementById('file-info');
+const fileName = document.getElementById('file-name');
+const clearFileBtn = document.getElementById('clear-file');
+const fileExtractionStatus = document.getElementById('file-extraction-status');
+const textToSummarize = document.getElementById('text-to-summarize');
+const charCount = document.getElementById('char-count');
+
+// Variável para armazenar arquivo atual
+let currentFile = null;
+
+// Inicializar eventos de upload quando os elementos existirem
+if (fileUpload && clearFileBtn) {
+    fileUpload.addEventListener('change', handleFileUpload);
+    clearFileBtn.addEventListener('click', clearFile);
+}
+
+// Funções para upload e extração de texto de arquivos
+async function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    currentFile = file;
+    if (fileName) fileName.textContent = file.name;
+    if (fileInfo) fileInfo.style.display = 'flex';
+
+    // Extrair texto do arquivo
+    try {
+        showFileExtractionStatus('Extraindo texto do arquivo...', 'extracting');
+        const text = await extractTextFromFile(file);
+        
+        if (text && text.trim()) {
+            if (textToSummarize) {
+                textToSummarize.value = text;
+                // Atualizar contador se existir função updateCharCount
+                if (typeof updateCharCount === 'function') {
+                    updateCharCount();
+                } else if (charCount) {
+                    const count = text.length;
+                    charCount.textContent = `Caracteres: ${count}/32000`;
+                }
+            }
+            showFileExtractionStatus('✅ Texto extraído com sucesso!', 'success');
+        } else {
+            throw new Error('Nenhum texto encontrado no arquivo');
+        }
+    } catch (error) {
+        console.error('Erro ao extrair texto:', error);
+        showFileExtractionStatus(`❌ Erro ao extrair texto: ${error.message}`, 'error');
+        clearFile();
+    }
+}
+
+async function extractTextFromFile(file) {
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+    
+    switch (fileExtension) {
+        case 'pdf':
+            return await extractTextFromPDF(file);
+        case 'docx':
+        case 'doc':
+            return await extractTextFromDOCX(file);
+        case 'txt':
+            return await extractTextFromTXT(file);
+        default:
+            throw new Error('Formato de arquivo não suportado. Use PDF, DOCX ou TXT.');
+    }
+}
+
+async function extractTextFromPDF(file) {
+    return new Promise((resolve, reject) => {
+        const fileReader = new FileReader();
+        
+        fileReader.onload = async function(e) {
+            try {
+                // Configurar PDF.js worker
+                if (typeof pdfjsLib !== 'undefined') {
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                    
+                    const typedarray = new Uint8Array(e.target.result);
+                    const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+                    
+                    let fullText = '';
+                    const numPages = pdf.numPages;
+                    
+                    for (let i = 1; i <= numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        const pageText = textContent.items.map(item => item.str).join(' ');
+                        fullText += pageText + '\n';
+                    }
+                    
+                    resolve(fullText.trim());
+                } else {
+                    reject(new Error('Biblioteca PDF.js não carregada. Recarregue a página.'));
+                }
+            } catch (error) {
+                reject(error);
+            }
+        };
+        
+        fileReader.onerror = reject;
+        fileReader.readAsArrayBuffer(file);
+    });
+}
+
+async function extractTextFromDOCX(file) {
+    return new Promise((resolve, reject) => {
+        const fileReader = new FileReader();
+        
+        fileReader.onload = async function(e) {
+            try {
+                if (typeof mammoth !== 'undefined') {
+                    const arrayBuffer = e.target.result;
+                    const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                    resolve(result.value);
+                } else {
+                    reject(new Error('Biblioteca Mammoth.js não carregada. Recarregue a página.'));
+                }
+            } catch (error) {
+                reject(error);
+            }
+        };
+        
+        fileReader.onerror = reject;
+        fileReader.readAsArrayBuffer(file);
+    });
+}
+
+async function extractTextFromTXT(file) {
+    return new Promise((resolve, reject) => {
+        const fileReader = new FileReader();
+        
+        fileReader.onload = function(e) {
+            resolve(e.target.result);
+        };
+        
+        fileReader.onerror = reject;
+        fileReader.readAsText(file, 'UTF-8');
+    });
+}
+
+function clearFile() {
+    if (fileUpload) fileUpload.value = '';
+    if (fileInfo) fileInfo.style.display = 'none';
+    if (fileExtractionStatus) fileExtractionStatus.style.display = 'none';
+    currentFile = null;
+}
+
+function showFileExtractionStatus(message, type) {
+    if (!fileExtractionStatus) return;
+    
+    fileExtractionStatus.textContent = message;
+    fileExtractionStatus.className = `file-extraction-status ${type}`;
+    fileExtractionStatus.style.display = 'block';
+    
+    if (type === 'success') {
+        setTimeout(() => {
+            if (fileExtractionStatus) fileExtractionStatus.style.display = 'none';
+        }, 3000);
+    }
+}
+// ===== FIM DA NOVA FUNCIONALIDADE =====

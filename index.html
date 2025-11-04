@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resumos IA - Gerador Inteligente</title>
+    <!-- Bibliotecas para extração de texto de arquivos -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <style>
         :root {
             --primary-color: #4285f4;
@@ -473,6 +476,121 @@
         .dark-mode-btn:hover {
             transform: scale(1.1);
         }
+
+        /* File Upload Styles - Nova funcionalidade */
+        .file-upload-container {
+            margin-bottom: 10px;
+        }
+
+        .file-upload-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            border: 2px dashed var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background-color: #f8f9fa;
+        }
+
+        .file-upload-label:hover {
+            border-color: var(--primary-color);
+            background-color: #e8f0fe;
+        }
+
+        .file-upload-icon {
+            font-size: 20px;
+        }
+
+        .file-upload-text {
+            color: #5f6368;
+            font-size: 14px;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background-color: #e6f4ea;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .file-info span {
+            color: var(--secondary-color);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .clear-file-btn {
+            background: none;
+            border: none;
+            color: #ea4335;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 5px;
+            transition: transform 0.2s;
+        }
+
+        .clear-file-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .file-extraction-status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .file-extraction-status.extracting {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffc107;
+        }
+
+        .file-extraction-status.success {
+            background-color: #e6f4ea;
+            color: var(--secondary-color);
+            border: 1px solid var(--secondary-color);
+        }
+
+        .file-extraction-status.error {
+            background-color: #fce8e6;
+            color: #ea4335;
+            border: 1px solid #ea4335;
+        }
+
+        body.dark-mode .file-upload-label {
+            background-color: #35363a;
+            border-color: #5f6368;
+        }
+
+        body.dark-mode .file-upload-label:hover {
+            background-color: #404144;
+            border-color: #8ab4f8;
+        }
+
+        body.dark-mode .file-info {
+            background-color: #2d5a3d;
+        }
+
+        body.dark-mode .file-extraction-status.extracting {
+            background-color: #5a4a2a;
+            color: #ffc107;
+        }
+
+        body.dark-mode .file-extraction-status.success {
+            background-color: #2d5a3d;
+            color: #81c995;
+        }
+
+        body.dark-mode .file-extraction-status.error {
+            background-color: #5a2d2d;
+            color: #ea4335;
+        }
     </style>
 
 
@@ -488,6 +606,21 @@
             <div class="card">
                 <h2>Gerador de Resumos</h2>
 
+                <div class="form-group">
+                    <label for="file-upload">Upload de arquivo:</label>
+                    <div class="file-upload-container">
+                        <input type="file" id="file-upload" accept=".pdf,.docx,.txt,.doc" style="display: none;">
+                        <label for="file-upload" class="file-upload-label">
+                            <span class="file-upload-icon">📄</span>
+                            <span class="file-upload-text">Clique para selecionar arquivo (PDF, DOCX, TXT)</span>
+                        </label>
+                        <div id="file-info" class="file-info" style="display: none;">
+                            <span id="file-name"></span>
+                            <button type="button" id="clear-file" class="clear-file-btn">✕</button>
+                        </div>
+                    </div>
+                    <div id="file-extraction-status" class="file-extraction-status" style="display: none;"></div>
+                </div>
 
                 <div class="form-group">
                     <label for="text-to-summarize">Texto para Resumir:</label>
@@ -738,6 +871,16 @@
 
             // Listar modelos
             listModelsBtn.addEventListener('click', listAvailableModels);
+
+            // Upload de arquivo - NOVA FUNCIONALIDADE
+            const fileUpload = document.getElementById('file-upload');
+            const clearFileBtn = document.getElementById('clear-file');
+            if (fileUpload) {
+                fileUpload.addEventListener('change', handleFileUpload);
+            }
+            if (clearFileBtn) {
+                clearFileBtn.addEventListener('click', clearFile);
+            }
         }
 
         function updateCharCount() {
@@ -885,10 +1028,18 @@
 
                 const data = await response.json();
 
-                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                // Verificar estrutura da resposta de forma mais robusta
+                if (data.candidates && 
+                    data.candidates.length > 0 && 
+                    data.candidates[0] && 
+                    data.candidates[0].content && 
+                    data.candidates[0].content.parts && 
+                    data.candidates[0].content.parts.length > 0 && 
+                    data.candidates[0].content.parts[0].text) {
                     showApiTestResult('✅ Conexão com a API estabelecida com sucesso!', true);
                     updateApiStatus('valid', 'API conectada e funcionando');
                 } else {
+                    console.error('Resposta da API no teste:', data);
                     throw new Error('Resposta inesperada da API');
                 }
 
@@ -993,6 +1144,18 @@
 
             const prompt = `Resuma o seguinte texto em aproximadamente ${targetWords} palavras, mantendo as ideias principais e o significado original. Retorne apenas o resumo, sem comentários adicionais:\n\n${text}`;
 
+            // Calcular maxOutputTokens baseado no tamanho desejado + margem de segurança
+            // A API precisa de tokens para processar o texto de entrada E gerar a saída
+            // Observação: A API usa tokens para "thoughts" internos também, então precisamos de mais espaço
+            // Baseado nos logs: 140 tokens de prompt + 2859 tokens de thoughts + tokens de resposta
+            const estimatedTokens = Math.max(
+                targetWords * 20, // Multiplicador maior (20x) para dar espaço suficiente
+                2000 // Mínimo de 2000 tokens para garantir espaço suficiente
+            );
+            // Limite máximo da API é geralmente 8192 tokens, mas vamos usar um valor seguro
+            // Usando 8191 para estar bem próximo do limite
+            const maxOutputTokens = Math.min(estimatedTokens, 8191);
+
             // Usando a versão correta v1 e o modelo selecionado
             const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${selectedModel}:generateContent?key=${apiKey}`, {
                 method: 'POST',
@@ -1009,7 +1172,7 @@
                         temperature: 0.3,
                         topK: 40,
                         topP: 0.95,
-                        maxOutputTokens: targetWords * 10,
+                        maxOutputTokens: maxOutputTokens,
                     }
                 })
             });
@@ -1021,10 +1184,60 @@
 
             const data = await response.json();
 
-            if (data.candidates && data.candidates[0].content.parts[0].text) {
-                return data.candidates[0].content.parts[0].text.trim();
+            // Log completo da resposta para debug
+            console.log('Resposta completa da API:', JSON.stringify(data, null, 2));
+
+            // Verificar se há bloqueios de segurança ou erros na resposta
+            if (data.promptFeedback) {
+                if (data.promptFeedback.blockReason) {
+                    throw new Error(`Conteúdo bloqueado: ${data.promptFeedback.blockReason}`);
+                }
+            }
+
+            // Verificar se há candidatos vazios (bloqueado por segurança)
+            if (data.candidates && data.candidates.length === 0) {
+                throw new Error('A API bloqueou a geração do conteúdo. Tente com um texto diferente.');
+            }
+
+            // Verificar estrutura da resposta de forma mais robusta
+            if (data.candidates && 
+                data.candidates.length > 0 && 
+                data.candidates[0] && 
+                data.candidates[0].content && 
+                data.candidates[0].content.parts && 
+                data.candidates[0].content.parts.length > 0 && 
+                data.candidates[0].content.parts[0].text) {
+                
+                const text = data.candidates[0].content.parts[0].text.trim();
+                const finishReason = data.candidates[0].finishReason;
+                
+                // Se foi cortado por MAX_TOKENS, avisar mas retornar o texto mesmo assim
+                if (finishReason === 'MAX_TOKENS') {
+                    console.warn('⚠️ O resumo foi cortado porque atingiu o limite de tokens. O texto pode estar incompleto.');
+                    // Adicionar aviso no texto retornado
+                    return text + '\n\n⚠️ Nota: O resumo foi cortado porque atingiu o limite de tokens. Pode estar incompleto.';
+                }
+                
+                // Verificar outros tipos de bloqueio (exceto STOP que é sucesso)
+                if (finishReason && finishReason !== 'STOP' && finishReason !== 'MAX_TOKENS') {
+                    const reason = finishReason;
+                    throw new Error(`A API bloqueou a geração do conteúdo. Motivo: ${reason}`);
+                }
+                
+                return text;
             } else {
-                throw new Error('Resposta inesperada da API');
+                // Log detalhado para debug
+                console.error('Estrutura da resposta:', {
+                    hasCandidates: !!data.candidates,
+                    candidatesLength: data.candidates?.length,
+                    firstCandidate: data.candidates?.[0],
+                    hasContent: !!data.candidates?.[0]?.content,
+                    hasParts: !!data.candidates?.[0]?.content?.parts,
+                    partsLength: data.candidates?.[0]?.content?.parts?.length,
+                    hasText: !!data.candidates?.[0]?.content?.parts?.[0]?.text
+                });
+                console.error('Resposta completa:', data);
+                throw new Error('Resposta inesperada da API. Verifique o console (F12) para mais detalhes.');
             }
         }
 
@@ -1062,6 +1275,154 @@
         }
         /* === Fim: Dark Mode JS === */
 
+        // ===== NOVA FUNCIONALIDADE: Upload e Extração de Texto de Arquivos =====
+        // Variável para armazenar arquivo atual
+        let currentFile = null;
+
+        // Funções para upload e extração de texto de arquivos
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            currentFile = file;
+            const fileName = document.getElementById('file-name');
+            const fileInfo = document.getElementById('file-info');
+            if (fileName) fileName.textContent = file.name;
+            if (fileInfo) fileInfo.style.display = 'flex';
+
+            // Extrair texto do arquivo
+            try {
+                showFileExtractionStatus('Extraindo texto do arquivo...', 'extracting');
+                const text = await extractTextFromFile(file);
+                
+                if (text && text.trim()) {
+                    textToSummarize.value = text;
+                    updateCharCount();
+                    showFileExtractionStatus('✅ Texto extraído com sucesso!', 'success');
+                } else {
+                    throw new Error('Nenhum texto encontrado no arquivo');
+                }
+            } catch (error) {
+                console.error('Erro ao extrair texto:', error);
+                showFileExtractionStatus(`❌ Erro ao extrair texto: ${error.message}`, 'error');
+                clearFile();
+            }
+        }
+
+        async function extractTextFromFile(file) {
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            
+            switch (fileExtension) {
+                case 'pdf':
+                    return await extractTextFromPDF(file);
+                case 'docx':
+                case 'doc':
+                    return await extractTextFromDOCX(file);
+                case 'txt':
+                    return await extractTextFromTXT(file);
+                default:
+                    throw new Error('Formato de arquivo não suportado. Use PDF, DOCX ou TXT.');
+            }
+        }
+
+        async function extractTextFromPDF(file) {
+            return new Promise((resolve, reject) => {
+                const fileReader = new FileReader();
+                
+                fileReader.onload = async function(e) {
+                    try {
+                        // Configurar PDF.js worker
+                        if (typeof pdfjsLib !== 'undefined') {
+                            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                            
+                            const typedarray = new Uint8Array(e.target.result);
+                            const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+                            
+                            let fullText = '';
+                            const numPages = pdf.numPages;
+                            
+                            for (let i = 1; i <= numPages; i++) {
+                                const page = await pdf.getPage(i);
+                                const textContent = await page.getTextContent();
+                                const pageText = textContent.items.map(item => item.str).join(' ');
+                                fullText += pageText + '\n';
+                            }
+                            
+                            resolve(fullText.trim());
+                        } else {
+                            reject(new Error('Biblioteca PDF.js não carregada. Recarregue a página.'));
+                        }
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                
+                fileReader.onerror = reject;
+                fileReader.readAsArrayBuffer(file);
+            });
+        }
+
+        async function extractTextFromDOCX(file) {
+            return new Promise((resolve, reject) => {
+                const fileReader = new FileReader();
+                
+                fileReader.onload = async function(e) {
+                    try {
+                        if (typeof mammoth !== 'undefined') {
+                            const arrayBuffer = e.target.result;
+                            const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                            resolve(result.value);
+                        } else {
+                            reject(new Error('Biblioteca Mammoth.js não carregada. Recarregue a página.'));
+                        }
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                
+                fileReader.onerror = reject;
+                fileReader.readAsArrayBuffer(file);
+            });
+        }
+
+        async function extractTextFromTXT(file) {
+            return new Promise((resolve, reject) => {
+                const fileReader = new FileReader();
+                
+                fileReader.onload = function(e) {
+                    resolve(e.target.result);
+                };
+                
+                fileReader.onerror = reject;
+                fileReader.readAsText(file, 'UTF-8');
+            });
+        }
+
+        function clearFile() {
+            const fileUpload = document.getElementById('file-upload');
+            const fileInfo = document.getElementById('file-info');
+            const fileExtractionStatus = document.getElementById('file-extraction-status');
+            if (fileUpload) fileUpload.value = '';
+            if (fileInfo) fileInfo.style.display = 'none';
+            if (fileExtractionStatus) fileExtractionStatus.style.display = 'none';
+            currentFile = null;
+        }
+
+        function showFileExtractionStatus(message, type) {
+            const fileExtractionStatus = document.getElementById('file-extraction-status');
+            if (!fileExtractionStatus) return;
+            
+            fileExtractionStatus.textContent = message;
+            fileExtractionStatus.className = `file-extraction-status ${type}`;
+            fileExtractionStatus.style.display = 'block';
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    if (fileExtractionStatus) fileExtractionStatus.style.display = 'none';
+                }, 3000);
+            }
+        }
+        // ===== FIM DA NOVA FUNCIONALIDADE =====
 
     </script>
 </body>

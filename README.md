@@ -45,7 +45,7 @@ Interface web moderna para geração de resumos inteligentes utilizando a podero
 - **Davi Gama**
 - **Joao Pedro**
 - **Samuel Allan**
-- **Jean**
+- **Jean Carlos**
 - **Joao Guilherme**
 
 ## 📄 Licença

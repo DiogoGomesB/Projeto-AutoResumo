@@ -1570,7 +1570,7 @@
             }
         }
 
-        // Função para exportar resumo como TXT
+        // TESTE
         function exportToTXT() {
             const summaryText = resultContent.textContent;
             if (!summaryText || !summaryText.trim()) {
@@ -1617,7 +1617,7 @@
                     wordCount: summaryText.split(/\s+/).length
                 };
                 
-                // Adicionar ao início do array
+                // Adicionar o inicio da array.
                 savedSummaries.unshift(summaryData);
                 
                 // Limitar a 50 resumos salvos
@@ -1636,7 +1636,7 @@
                 successMsg.style.marginTop = '10px';
                 resultContainer.appendChild(successMsg);
                 
-                // Esconder mensagem após 3 segundos
+                // Esconde a mensagem apos 3 minutos
                 setTimeout(() => {
                     successMsg.style.display = 'none';
                     if (resultContainer.contains(successMsg)) {
@@ -1648,7 +1648,8 @@
                 showError(`Erro ao salvar resumo: ${error.message}`);
             }
         }
-        // ===== FIM DA FUNCIONALIDADE DE EXPORTAÇÃO =====
+        // ===== FIM DA FUNCIONALIDADE DE EXPORTAÇÃO ====
+
 
     </script>
 </body>

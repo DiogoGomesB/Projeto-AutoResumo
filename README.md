@@ -46,7 +46,7 @@ Interface web moderna para geração de resumos inteligentes utilizando a podero
 - **Joao Pedro**
 - **Samuel Allan**
 - **Jean**
-- **Joao**
+- **Joao Guilherme**
 
 ## 📄 Licença
 
@@ -54,4 +54,3 @@ Este projeto está sob licença MIT - veja [LICENSE](LICENSE) para detalhes.
 
 ---
 
-**🔗 Demo Online**: [https://diogogomesb.github.io/Projeto-AutoResumo/](https://diogogomesb.github.io/Projeto-AutoResumo/)
